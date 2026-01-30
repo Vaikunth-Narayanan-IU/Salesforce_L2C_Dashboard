@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: salesforce-l2o-funnel-explorer
+    runtime: static
+    buildCommand: "npm ci && npm run build"
+    staticPublishPath: "out"
+
