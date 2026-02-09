@@ -35,14 +35,21 @@ export function FiltersBar() {
   const setFilters = useExplorerStore((s) => s.actions.setFilters);
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="text-base font-semibold text-slate-900">Filter Deals</h2>
+        <span className="text-xs text-slate-500">
+          Filters apply to all charts below
+        </span>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <SelectField
           label="Segment"
           value={filters.segment}
           onChange={(segment) => setFilters({ segment })}
           options={[
-            { value: "All", label: "All" },
+            { value: "All", label: "All Segments" },
             ...availableSegments.map((s) => ({ value: s, label: s }))
           ]}
         />
@@ -52,17 +59,17 @@ export function FiltersBar() {
           value={filters.region}
           onChange={(region) => setFilters({ region })}
           options={[
-            { value: "All", label: "All" },
+            { value: "All", label: "All Regions" },
             ...availableRegions.map((r) => ({ value: r, label: r }))
           ]}
         />
 
         <SelectField
-          label="Seller tenure bucket"
+          label="Seller Tenure"
           value={filters.sellerTenureBucket}
           onChange={(sellerTenureBucket) => setFilters({ sellerTenureBucket })}
           options={[
-            { value: "All", label: "All" },
+            { value: "All", label: "All Tenures" },
             ...TENURE_BUCKETS.map((b) => ({ value: b, label: b }))
           ]}
         />
@@ -72,7 +79,7 @@ export function FiltersBar() {
           value={filters.outcome}
           onChange={(outcome) => setFilters({ outcome: outcome as "All" | "Won" | "Lost" })}
           options={[
-            { value: "All", label: "All" },
+            { value: "All", label: "All Outcomes" },
             { value: "Won", label: "Won" },
             { value: "Lost", label: "Lost" }
           ]}

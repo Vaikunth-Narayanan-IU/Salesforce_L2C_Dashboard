@@ -37,52 +37,61 @@ export function DropoffHeatmap(props: {
   regionBreakdown?: DropoffBreakdownRow[];
 }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-5">
-      <div>
-        <h2 className="text-base font-semibold">Drop-off heatmap</h2>
-        <p className="mt-1 text-sm text-slate-600">
-          Transition drop-off % (hover for counts).
+    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="mb-6">
+        <h2 className="text-base font-semibold text-slate-900">Funnel Drop-off</h2>
+        <p className="mt-1 text-sm text-slate-500">
+          Heatmap of deal loss between stages (hover for details)
         </p>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {props.dropoffs.map((d) => {
-          const level = bucket(d.dropPct);
-          const dropPct = d.dropPct * 100;
-          return (
-            <div
-              key={`${d.from}-${d.to}`}
-              className={[
-                "rounded-md border px-3 py-3 shadow-sm",
-                "transition-colors",
-                cellClass(level)
-              ].join(" ")}
-              title={`${d.from}→${d.to}: drop-off ${dropPct.toFixed(1)}% (from n=${d.fromCount} to n=${d.toCount})`}
-            >
-              <div className="text-xs font-medium opacity-80">{d.from}→{d.to}</div>
-              <div className="mt-1 text-lg font-semibold">{dropPct.toFixed(1)}%</div>
-              <div className="mt-1 text-xs opacity-80">
-                n={d.fromCount} → {d.toCount}
+      {props.dropoffs.length === 0 ? (
+        <div className="flex h-40 items-center justify-center rounded-lg border border-dashed border-slate-300 bg-slate-50">
+          <p className="text-sm text-slate-500">No data matches the selected filters</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {props.dropoffs.map((d) => {
+            const level = bucket(d.dropPct);
+            const dropPct = d.dropPct * 100;
+            return (
+              <div
+                key={`${d.from}-${d.to}`}
+                className={[
+                  "flex flex-col justify-between rounded-lg border p-4 transition-colors hover:shadow-md",
+                  cellClass(level)
+                ].join(" ")}
+                title={`${d.from} → ${d.to}\nDrop-off: ${dropPct.toFixed(1)}%\n${d.fromCount} entered → ${d.toCount} progressed`}
+              >
+                <div className="text-xs font-medium uppercase opacity-70">
+                  {d.from} → {d.to}
+                </div>
+                <div className="mt-2 text-2xl font-bold tracking-tight">
+                  {dropPct.toFixed(1)}%
+                </div>
+                <div className="mt-1 text-xs opacity-70">
+                  {d.fromCount} → {d.toCount}
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       {(props.segmentBreakdown?.length || props.regionBreakdown?.length) ? (
-        <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+        <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
           {props.segmentBreakdown?.length ? (
-            <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
-              <div className="text-sm font-medium text-slate-900">By segment</div>
-              <div className="mt-1 text-xs text-slate-600">
-                Worst transition: {props.worstTransitionLabel ?? "—"}
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <div className="text-sm font-semibold text-slate-900">Highest Drop-off by Segment</div>
+              <div className="mt-1 text-xs text-slate-500">
+                Top segments for transition: {props.worstTransitionLabel ?? "—"}
               </div>
               <ul className="mt-3 space-y-2 text-sm">
                 {props.segmentBreakdown.map((r) => (
-                  <li key={r.group} className="flex items-center justify-between gap-3">
-                    <span className="truncate text-slate-700">{r.group}</span>
-                    <span className="whitespace-nowrap font-medium text-slate-900">
-                      {(r.dropPct * 100).toFixed(1)}% <span className="text-xs text-slate-500">(n={r.fromCount}→{r.toCount})</span>
+                  <li key={r.group} className="flex items-center justify-between gap-3 border-b border-slate-200 pb-1 last:border-0 last:pb-0">
+                    <span className="truncate font-medium text-slate-700">{r.group}</span>
+                    <span className="whitespace-nowrap text-slate-900">
+                      {(r.dropPct * 100).toFixed(1)}% <span className="text-xs text-slate-400">({r.fromCount}→{r.toCount})</span>
                     </span>
                   </li>
                 ))}
@@ -91,17 +100,17 @@ export function DropoffHeatmap(props: {
           ) : null}
 
           {props.regionBreakdown?.length ? (
-            <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
-              <div className="text-sm font-medium text-slate-900">By region</div>
-              <div className="mt-1 text-xs text-slate-600">
-                Worst transition: {props.worstTransitionLabel ?? "—"}
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <div className="text-sm font-semibold text-slate-900">Highest Drop-off by Region</div>
+              <div className="mt-1 text-xs text-slate-500">
+                Top regions for transition: {props.worstTransitionLabel ?? "—"}
               </div>
               <ul className="mt-3 space-y-2 text-sm">
                 {props.regionBreakdown.map((r) => (
-                  <li key={r.group} className="flex items-center justify-between gap-3">
-                    <span className="truncate text-slate-700">{r.group}</span>
-                    <span className="whitespace-nowrap font-medium text-slate-900">
-                      {(r.dropPct * 100).toFixed(1)}% <span className="text-xs text-slate-500">(n={r.fromCount}→{r.toCount})</span>
+                  <li key={r.group} className="flex items-center justify-between gap-3 border-b border-slate-200 pb-1 last:border-0 last:pb-0">
+                    <span className="truncate font-medium text-slate-700">{r.group}</span>
+                    <span className="whitespace-nowrap text-slate-900">
+                      {(r.dropPct * 100).toFixed(1)}% <span className="text-xs text-slate-400">({r.fromCount}→{r.toCount})</span>
                     </span>
                   </li>
                 ))}

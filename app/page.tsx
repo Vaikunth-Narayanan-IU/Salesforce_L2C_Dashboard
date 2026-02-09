@@ -9,6 +9,7 @@ import { DropoffHeatmap } from "@/components/charts/DropoffHeatmap";
 import { DriversChart } from "@/components/charts/DriversChart";
 import { InsightCards } from "@/components/insights/InsightCards";
 import { DataTable } from "@/components/table/DataTable";
+import { KpiRow } from "@/components/stats/KpiRow";
 
 import { computeStageAggregates, computeCycleStats } from "@/lib/analytics/rollups";
 import { computeDropoffs, computeFunnel } from "@/lib/analytics/funnel";
@@ -19,48 +20,17 @@ import { buildDatasetFromCsvText, fetchCsvText } from "@/lib/loadDataset";
 import { useExplorerStore } from "@/store/useExplorerStore";
 import type { DealRollup } from "@/lib/analytics/rollups";
 
-function KpiCard(props: { label: string; value: string; sub?: string }) {
-  return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="text-xs font-medium text-slate-600">{props.label}</div>
-      <div className="mt-1 text-lg font-semibold tracking-tight text-slate-900">{props.value}</div>
-      {props.sub ? <div className="mt-1 text-xs text-slate-500">{props.sub}</div> : null}
-    </div>
-  );
-}
-
-function FilterChip(props: { label: string; onClear: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={props.onClear}
-      className="inline-flex items-center gap-2 rounded-full border border-brand-200 bg-white px-3 py-1.5 text-xs font-medium text-brand-900 shadow-sm transition hover:bg-brand-50 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:ring-offset-2"
-      title="Click to clear filter"
-    >
-      {props.label}
-      <span className="text-slate-400">×</span>
-    </button>
-  );
-}
-
 function LoadingState() {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-semibold">Dashboard</h1>
-          <p className="mt-2 text-sm text-slate-700">Loading the bundled sample dataset…</p>
-        </div>
-        <div className="h-5 w-24 animate-pulse rounded-full bg-slate-100" />
+    <div className="mx-auto max-w-7xl animate-pulse space-y-8 p-6">
+      <div className="h-10 w-1/3 rounded bg-slate-200"></div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+        <div className="h-32 rounded bg-slate-200"></div>
+        <div className="h-32 rounded bg-slate-200"></div>
+        <div className="h-32 rounded bg-slate-200"></div>
+        <div className="h-32 rounded bg-slate-200"></div>
       </div>
-
-      <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="h-20 animate-pulse rounded-lg border border-slate-200 bg-slate-50" />
-        <div className="h-20 animate-pulse rounded-lg border border-slate-200 bg-slate-50" />
-        <div className="h-20 animate-pulse rounded-lg border border-slate-200 bg-slate-50" />
-      </div>
-
-      <div className="mt-4 h-64 animate-pulse rounded-lg border border-slate-200 bg-slate-50" />
+      <div className="h-96 rounded bg-slate-200"></div>
     </div>
   );
 }
@@ -224,158 +194,116 @@ export default function DashboardPage() {
     return <LoadingState />;
   }
 
-  const activeChips: Array<{ key: string; label: string; clear: () => void }> = [
-    filters.segment !== "All"
-      ? { key: "segment", label: `Segment: ${filters.segment}`, clear: () => actions.setFilters({ segment: "All" }) }
-      : null,
-    filters.region !== "All"
-      ? { key: "region", label: `Region: ${filters.region}`, clear: () => actions.setFilters({ region: "All" }) }
-      : null,
-    filters.sellerTenureBucket !== "All"
-      ? {
-          key: "tenure",
-          label: `Tenure: ${filters.sellerTenureBucket}`,
-          clear: () => actions.setFilters({ sellerTenureBucket: "All" })
-        }
-      : null,
-    filters.outcome !== "All"
-      ? { key: "outcome", label: `Outcome: ${filters.outcome}`, clear: () => actions.setFilters({ outcome: "All" }) }
-      : null
-  ].filter(Boolean) as any;
-
   return (
-    <div className="space-y-4">
-      {source === "sample" ? (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 shadow-sm">
-          <span className="font-semibold">{SYNTHETIC_DISCLAIMER.split(":")[0]}:</span>{" "}
-          {SYNTHETIC_DISCLAIMER.split(":").slice(1).join(":").trim()}
-        </div>
-      ) : null}
+    <div className="mx-auto max-w-7xl space-y-8 p-6 font-sans text-slate-900">
+      {/* Header */}
+      <header className="space-y-2">
+        <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+          L2O Funnel Friction Explorer
+        </h1>
+        <p className="text-lg text-slate-600">
+          Explore where deals slow down in the Lead-to-Cash funnel and what drives friction.
+        </p>
+      </header>
 
-      {loadError ? (
-        <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900 shadow-sm">
-          <div className="font-semibold">Data load error</div>
-          <div className="mt-1">{loadError}</div>
-        </div>
-      ) : null}
+      {/* Funnel Health Overview */}
+      <section className="space-y-4">
+        <h2 className="text-xl font-semibold tracking-tight text-slate-900">
+          Funnel Health Overview
+        </h2>
+        <KpiRow
+          filteredDealsCount={filteredDeals.length}
+          filteredStageRowsCount={filteredStageRows.length}
+          cycleStats={cycleStats}
+          worstDropoff={worstDropoff}
+        />
+      </section>
 
-      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
-          <div>
-            <h1 className="text-lg font-semibold">Dashboard</h1>
-            <p className="mt-1 text-sm text-slate-600">
-              Interactive funnel explorer (filters apply everywhere).
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {activeChips.length ? (
-              <>
-                {activeChips.map((c: any) => (
-                  <FilterChip key={c.key} label={c.label} onClear={c.clear} />
-                ))}
-                <button
-                  type="button"
-                  onClick={() =>
-                    actions.setFilters({
-                      segment: "All",
-                      region: "All",
-                      sellerTenureBucket: "All",
-                      outcome: "All"
-                    })
-                  }
-                  className="rounded-full bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:ring-offset-2"
-                >
-                  Reset
-                </button>
-              </>
-            ) : (
-              <span className="text-sm text-slate-600">No filters applied</span>
-            )}
-          </div>
-        </div>
+      {/* Filters */}
+      <section>
+        <FiltersBar />
+      </section>
 
-        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <KpiCard label="Deals in view" value={`${filteredDeals.length}`} sub={`Stage rows: ${filteredStageRows.length}`} />
-          <KpiCard label="Win rate" value={`${(cycleStats.winRate * 100).toFixed(1)}%`} sub={`n=${cycleStats.nDeals}`} />
-          <KpiCard
-            label="Median cycle time"
-            value={`${cycleStats.medianTotalCycleTime.toFixed(1)}d`}
-            sub={`Avg: ${cycleStats.avgTotalCycleTime.toFixed(1)}d`}
-          />
+      {/* Where Deals Stall */}
+      <section className="space-y-4">
+        <h2 className="text-xl font-semibold tracking-tight text-slate-900">
+          Where Deals Stall
+        </h2>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <StageDurationChart stageAggs={stageAggs} cycleStats={cycleStats} />
+          <FunnelChart funnel={funnel} />
         </div>
-      </div>
+        <DropoffHeatmap
+          dropoffs={dropoffs}
+          worstTransitionLabel={worstDropoff ? `${worstDropoff.from}→${worstDropoff.to}` : undefined}
+          segmentBreakdown={dropoffSegmentBreakdown}
+          regionBreakdown={dropoffRegionBreakdown}
+        />
+      </section>
 
-      {parseSummary ? (
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-slate-700">
+      {/* Primary Friction Drivers */}
+      <section className="space-y-4">
+        <h2 className="text-xl font-semibold tracking-tight text-slate-900">
+          Primary Friction Drivers
+        </h2>
+        <DriversChart status={modelStatus} result={modelResult} />
+      </section>
+
+      {/* Key Insights */}
+      <section className="space-y-4">
+        <h2 className="text-xl font-semibold tracking-tight text-slate-900">
+          Key Insights
+        </h2>
+        <InsightCards insights={insights} />
+      </section>
+
+      {/* Parse Summary (if any issues) */}
+      {parseSummary && (parseSummary.droppedRowCount > 0 || parseSummary.papaErrors.length > 0) ? (
+        <section className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-amber-900">
+            <span className="font-semibold">Data Quality Note:</span>
             <span>
-              <span className="font-medium text-slate-900">Stage rows:</span> {stageRows.length}
-            </span>
-            <span>
-              <span className="font-medium text-slate-900">Deals:</span> {deals.length}
-            </span>
-            <span>
-              <span className="font-medium text-slate-900">Dropped rows:</span> {parseSummary.droppedRowCount}
+              <span className="font-medium">Dropped rows:</span> {parseSummary.droppedRowCount}
             </span>
             {parseSummary.papaErrors.length ? (
-              <span className="text-rose-700">
+              <span>
                 <span className="font-medium">CSV parse warnings:</span> {parseSummary.papaErrors.length}
               </span>
             ) : null}
           </div>
-
           {parseSummary.invalidRowsPreview.length ? (
-            <details className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
-              <summary className="cursor-pointer text-sm font-medium text-slate-800">
-                Show first {parseSummary.invalidRowsPreview.length} invalid rows
+            <details className="mt-2 text-sm text-amber-800">
+              <summary className="cursor-pointer font-medium hover:underline">
+                View invalid rows ({parseSummary.invalidRowsPreview.length})
               </summary>
-              <div className="mt-3 space-y-3 text-sm text-slate-700">
-                {parseSummary.invalidRowsPreview.map((r) => (
-                  <div key={r.rowNumber} className="rounded-md border border-slate-200 bg-white p-3">
-                    <div className="font-medium text-slate-900">Row {r.rowNumber}</div>
-                    <ul className="mt-2 list-disc space-y-1 pl-5">
-                      {r.issues.map((i) => (
-                        <li key={i}>{i}</li>
-                      ))}
-                    </ul>
-                  </div>
+              <ul className="mt-2 list-disc space-y-1 pl-5">
+                {parseSummary.invalidRowsPreview.map((r, i) => (
+                  <li key={i}>Row {r.rowNumber}: {r.issues.join(", ")}</li>
                 ))}
-              </div>
+              </ul>
             </details>
           ) : null}
-        </div>
+        </section>
       ) : null}
 
-      <FiltersBar />
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <StageDurationChart stageAggs={stageAggs} cycleStats={cycleStats} />
-        <div className="grid grid-cols-1 gap-4">
-          <FunnelChart funnel={funnel} />
-          <DropoffHeatmap
-            dropoffs={dropoffs}
-            worstTransitionLabel={worstDropoff ? `${worstDropoff.from}→${worstDropoff.to}` : undefined}
-            segmentBreakdown={dropoffSegmentBreakdown}
-            regionBreakdown={dropoffRegionBreakdown}
-          />
+      {/* Data Table & Footer */}
+      <section className="border-t border-slate-200 pt-8">
+        <div className="flex items-center justify-between">
+          <div className="text-sm font-medium text-slate-700">Detailed Data View</div>
+          <button
+            type="button"
+            onClick={() => setHideTable((v) => !v)}
+            className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm transition hover:border-brand-200 hover:bg-brand-50 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:ring-offset-2"
+          >
+            {hideTable ? "Show table" : "Hide table"}
+          </button>
         </div>
-      </div>
+        {!hideTable && <div className="mt-4"><DataTable rows={filteredStageRows} /></div>}
 
-      <DriversChart status={modelStatus} result={modelResult} />
-      <InsightCards insights={insights} />
-
-      <div className="flex items-center justify-between">
-        <div className="text-sm font-medium text-slate-700">Data table</div>
-        <button
-          type="button"
-          onClick={() => setHideTable((v) => !v)}
-          className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm transition hover:border-brand-200 hover:bg-brand-50 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:ring-offset-2"
-        >
-          {hideTable ? "Show table" : "Hide table"}
-        </button>
-      </div>
-
-      {hideTable ? null : <DataTable rows={filteredStageRows} />}
+        <div className="mt-8 text-center text-sm text-slate-500">
+          Insights generated from synthetic demo data • {SYNTHETIC_DISCLAIMER.split(":").slice(1).join(":").trim()}
+        </div>
+      </section>
     </div>
   );
 }
